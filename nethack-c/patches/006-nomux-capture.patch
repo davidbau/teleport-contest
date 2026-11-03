@@ -251,7 +251,7 @@ diff -urN -x *.bak a/win/tty/termcap.c b/win/tty/termcap.c
 +    return 37;
 +}
 +
-+static char nomux_out[24 * 256];
++static char nomux_out[24 * 1024]; /* 24 * 256 overflowed on dense DECgraphics+colour screens */
 +char *nomux_capture_screen(void) {
 +    char *p = nomux_out;
 +    int row, col, end, cur_fg, cur_attr;

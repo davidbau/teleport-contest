@@ -1,6 +1,6 @@
 # NetHack 5.0 recorder patches
 
-Eight patches that turn upstream NetHack 5.0 into a deterministic,
+Nine patches that turn upstream NetHack 5.0 into a deterministic,
 reproducible "recorder" build whose run-to-run behavior is exactly
 what the JS port has to match.
 
@@ -14,6 +14,7 @@ what the JS port has to match.
 | 006 | `nomux-capture` | Replace `tty` curses output with a deterministic 24×80 frame capture | Need exact terminal contents at every input boundary |
 | 007 | `nomux-raw-print` | Route `raw_print` (early errors, banners) through nomux too | Otherwise startup banners aren't captured |
 | 008 | `nomux-deterministic-capture` | Snapshot the screen exactly when C blocks for the next key | Pins frame boundaries to `tty_nhgetch` calls |
+| 010 | `fmt-ptr-placeholder` | Print `<ptr>` (or `<null>`) for every pointer `fmt_ptr()` formats, in place of the address | `#timeout`, `#lightsources` and other wizard-mode screens print addresses, which ASLR changes on every run, so no recording matches another run of C, let alone a port |
 
 ## Apply
 

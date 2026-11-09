@@ -14,7 +14,7 @@ what the JS port has to match.
 | 006 | `nomux-capture` | Replace `tty` curses output with a deterministic 24×80 frame capture | Need exact terminal contents at every input boundary |
 | 007 | `nomux-raw-print` | Route `raw_print` (early errors, banners) through nomux too | Otherwise startup banners aren't captured |
 | 008 | `nomux-deterministic-capture` | Snapshot the screen exactly when C blocks for the next key | Pins frame boundaries to `tty_nhgetch` calls |
-| 009 | `rebind-keys-memory` | In `handler_rebind_keys_add()`: initialize `cmdstr` (backport of upstream NetHack 5.0 `c3ce341434` + `411c8becb9`, NetHack/NetHack#1650), and save the previous command before `bind_key()` instead of reading it from a binding that unbinding has freed (proposed upstream as NetHack/NetHack#1739) | Binding a key from the in-game menu failed or succeeded depending on leftover stack bytes (on the macOS recorder, `symset:DECgraphics` alone flips it), and unbinding then read freed memory, so the result depended on the allocator |
+| 009 | `rebind-keys-memory` | In `handler_rebind_keys_add()`: initialize `cmdstr` (backport of upstream NetHack 5.0 `c3ce341434` + `411c8becb9`, NetHack/NetHack#1650), and save the previous command before `bind_key()` instead of reading it from a binding that unbinding has freed (proposed upstream as NetHack/NetHack#1739) | Binding a key from the in-game menu failed or succeeded depending on leftover stack bytes (it fails on the macOS recorder and succeeded in a recording from another machine), and unbinding then read freed memory, so the result depended on the allocator |
 
 ## Apply
 

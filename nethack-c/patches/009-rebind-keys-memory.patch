@@ -6,9 +6,9 @@ Fix two memory bugs in handler_rebind_keys_add()
    held a non-zero byte, bind_key() received an unknown command and the
    game printed "Key binding failed?!". This part is a backport of
    upstream NetHack 5.0 commits c3ce341434 and 411c8becb9 (GitHub issue
-   NetHack/NetHack#1650). On the macOS arm64 recorder, whether it fails
-   depends on the build and on unrelated options such as
-   OPTIONS=symset:DECgraphics.
+   NetHack/NetHack#1650). On the macOS arm64 recorder it failed in every
+   build and option set tried, while a recording of the same keystrokes
+   made on another machine succeeded.
 
 2. With cmdstr fixed, unbinding a key (choosing "nothing") reaches a
    use-after-free: bind_key() -> cmdbind_remove() frees the binding that

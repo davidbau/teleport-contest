@@ -1,0 +1,14 @@
+--- a/src/alloc.c
++++ b/src/alloc.c
+@@ -130,7 +130,10 @@
+     if (++ptrbufidx >= PTRBUFCNT)
+         ptrbufidx = 0;
+ 
+-    Sprintf(buf, PTR_FMT, (PTR_TYP) ptr);
++    /* An address differs on every run (ASLR), so a recording would never
++       match itself or a port.  Print a fixed placeholder instead, keeping
++       null distinct. */
++    Sprintf(buf, "%s", ptr ? "<ptr>" : "<null>");
+     return buf;
+ }
+ 

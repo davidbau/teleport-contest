@@ -1,0 +1,64 @@
+Fix two memory bugs in handler_rebind_keys_add()
+
+1. cmdstr[BUFSZ] was never initialized before Strcat(cmdstr, "nothing")
+   or Strcat(cmdstr, ec->ef_txt), so the command string began with
+   whatever bytes earlier calls had left on the stack. When that memory
+   held a non-zero byte, bind_key() received an unknown command and the
+   game printed "Key binding failed?!". This part is a backport of
+   upstream NetHack 5.0 commits c3ce341434 and 411c8becb9 (GitHub issue
+   NetHack/NetHack#1650). On the macOS arm64 recorder it failed in every
+   build and option set tried, while a recording of the same keystrokes
+   made on another machine succeeded.
+
+2. With cmdstr fixed, unbinding a key (choosing "nothing") reaches a
+   use-after-free: bind_key() -> cmdbind_remove() frees the binding that
+   prevcmd points to, and the message code then reads prevcmd->cmd. On
+   the macOS recorder that read happens to return NULL, so no message is
+   printed; elsewhere it depends on the allocator. When a bound key is
+   rebound to another command, the binding is updated in place, so
+   prevcmd->cmd already equals the new command and "Changed key" is never
+   printed either. The fix saves the previous command before calling
+   bind_key(), so both cases print "Changed key '<k>' from "<old>" to
+   "<new>"." as intended. Proposed upstream as NetHack/NetHack#1739.
+
+diff --git a/src/cmd.c b/src/cmd.c
+index 73b6c4c..fef6990 100644
+--- a/src/cmd.c
++++ b/src/cmd.c
+@@ -2299,7 +2299,9 @@ handler_rebind_keys_add(boolean keyfirst)
+     char buf2[QBUFSZ];
+     uchar key = '\0';
+     int clr = NO_COLOR;
++    char cmdstr[BUFSZ];
+ 
++    cmdstr[0] = '\0';
+     if (keyfirst) {
+         pline("Bind which key? ");
+         key = pgetchar();
+@@ -2353,7 +2355,7 @@ handler_rebind_keys_add(boolean keyfirst)
+     destroy_nhwindow(win);
+     if (npick > 0) {
+         struct Cmd_bind *prevcmd;
+-        char cmdstr[BUFSZ];
++        const struct ext_func_tab *prevec;
+ 
+         i = picks->item.a_int;
+         free((genericptr_t) picks);
+@@ -2389,12 +2391,14 @@ handler_rebind_keys_add(boolean keyfirst)
+         }
+ 
+         prevcmd = cmdbind_get(key);
++        /* binding "nothing" frees prevcmd, so note its command first */
++        prevec = prevcmd ? prevcmd->cmd : (const struct ext_func_tab *) 0;
+ 
+         if (bind_key(key, cmdstr, TRUE)) {
+-            if (prevcmd && prevcmd->cmd != ec) {
++            if (prevec && prevec != ec) {
+                 pline("Changed key '%s' from \"%s\" to \"%s\".",
+-                      key2txt(key, buf2), prevcmd->cmd->ef_txt, cmdstr);
+-            } else if (!prevcmd) {
++                      key2txt(key, buf2), prevec->ef_txt, cmdstr);
++            } else if (!prevec) {
+                 pline("Bound key '%s' to \"%s\".",
+                       key2txt(key, buf2), cmdstr);
+             }

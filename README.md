@@ -214,8 +214,7 @@ github.com/NetHack/NetHack), applies the eight patches into
 You do NOT need to do this to enter the contest. The 44 sessions in
 `sessions/` were recorded with this build and ship ready to score
 against. Build the recorder only if you want to record your own
-debugging sessions or generate supplemental coverage (see
-`PROMPT.md` Parts 2 and 4).
+debugging sessions or generate supplemental coverage.
 
 Requires: `clang` (not gcc — see below), `make`, `bison`, `flex`.
 

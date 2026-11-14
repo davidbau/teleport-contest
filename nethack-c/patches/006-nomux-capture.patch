@@ -37,6 +37,7 @@ diff -urN -x *.bak a/include/wintty.h b/include/wintty.h
 +extern char *nomux_capture_screen(void);
 +extern void nomux_get_cursor(int *cx, int *cy);
 +extern void nomux_enter_raw_mode(void);
++extern void nomux_reset_raw_mode(void);
 +extern void nomux_raw_emit(const char *s, int bold);
 +extern void nomux_raw_emit_eol(void);
 +#endif
@@ -251,7 +252,12 @@ diff -urN -x *.bak a/win/tty/termcap.c b/win/tty/termcap.c
 +    return 37;
 +}
 +
-+static char nomux_out[24 * 256];
++/* Full-map colored captures can be much larger than a plain 24x80 screen:
++ * each cell may carry SGR and DEC graphics transitions.  Gehennom water/lava
++ * maps with dark-gray recoloring exceeded the old 24*256 buffer, corrupting
++ * subsequent OSC marker headers into the payload.  Budget 32 bytes/cell plus
++ * row separators/resets. */
++static char nomux_out[(24 * 80 * 32) + (24 * 16) + 1];
 +char *nomux_capture_screen(void) {
 +    char *p = nomux_out;
 +    int row, col, end, cur_fg, cur_attr;
@@ -339,6 +345,12 @@ diff -urN -x *.bak a/win/tty/termcap.c b/win/tty/termcap.c
 +     * terminal returns to a blank main-screen state before the high-score
 +     * lines print. Mirror that by clearing the shadow. */
 +    nomux_clear_screen();
++}
++
++void nomux_reset_raw_mode(void) {
++    nomux_raw_active = 0;
++    nomux_raw_row = 0;
++    nomux_raw_col = 0;
 +}
 +
 +static void nomux_raw_putch(int ch) {
@@ -575,6 +587,18 @@ diff -urN -x *.bak a/win/tty/wintty.c b/win/tty/wintty.c
                  svp.plname[ct++] = c;
  #ifdef WIN32CON
                  ttyDisplay->curx++;
+@@ -814,6 +814,14 @@
+     tty_suspend_nhwindows(str);
++#ifdef NOMUX_CAPTURE
++    /* Raw output during suspend belongs to the teardown message stream.
++     * Do not let its shadow row counter leak into later post-window raw
++     * output such as topten.  The next raw_print will enter raw mode and
++     * clear the shadow at that actual terminal boundary. */
++    nomux_reset_raw_mode();
++#endif
+     /*
+      * Disable windows to avoid calls to window routines.
+      */
 @@ -1164,6 +1168,9 @@
      if (flags.standout)
          standoutbeg();

@@ -8,9 +8,7 @@
 //       datetime: string,     // fixed datetime, "YYYYMMDDHHMMSS"
 //       nethackrc: string,    // game-options rc file contents
 //       moves: string,        // raw key sequence to replay from launch
-//       steps: [...]          // recorded comparison data; for internal
-//                             //   teleport sessions step.rng may carry
-//                             //   ^events alongside rn2/rnd entries
+//       steps: [...]          // recorded comparison data
 //   }
 //
 // Clean v5 session:
